@@ -70,6 +70,12 @@ services:
       - "8761:8761"
     networks:
       - immobili-network
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'ready' || exit 1"] 
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   # 5. API Gateway (Punto de entrada único)
   micro-gateway:
@@ -79,6 +85,9 @@ services:
       - "8080:8080"
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://micro-eureka:8761/eureka/
+      - "SPRING_CLOUD_GATEWAY_GLOBALCORS_CORSCONFIGURATIONS_[/**]_ALLOWEDORIGINS=http://18.224.69.91:3000"
+      - "SPRING_CLOUD_GATEWAY_GLOBALCORS_CORSCONFIGURATIONS_[/**]_ALLOWEDMETHODS=GET,POST,PUT,DELETE,OPTIONS"
+      - "SPRING_CLOUD_GATEWAY_GLOBALCORS_CORSCONFIGURATIONS_[/**]_ALLOWEDHEADERS=*"
     depends_on:
       - micro-eureka
     networks:
@@ -91,21 +100,15 @@ services:
     ports:
       - "8081:8081"
     environment:
-      # Conexión a Postgres
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/immobili_db
       - SPRING_DATASOURCE_USERNAME=admin
       - SPRING_DATASOURCE_PASSWORD=password123
-      # Conexión a Elastic
       - SPRING_ELASTICSEARCH_URIS=http://elasticsearch:9200
-      # Conexión a Eureka
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://micro-eureka:8761/eureka/
     depends_on:
-      postgres-db:
-        condition: service_healthy # Espera a que la BD esté lista
-      elasticsearch:
-        condition: service_started
-      micro-eureka:
-        condition: service_started
+      - postgres-db
+      - elasticsearch
+      - micro-eureka
     networks:
       - immobili-network
 
