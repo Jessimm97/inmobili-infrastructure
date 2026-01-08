@@ -1,6 +1,6 @@
 [submodule "frontend"]
 	path = frontend
-	url = https://github.com/fernandoleal04/inmobili.git
+	url = https://github.com/Jessimm97/inmobili.git
 [submodule "backend"]
 	path = backend
-	url = https://github.com/fernandoleal04/inmobili-services.git
+	url = https://github.com/Jessimm97/inmobili-services.git
