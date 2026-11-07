@@ -1,25 +1,4 @@
 services:
-  # 1. PostgreSQL
-  postgres-db:
-    image: postgres:15-alpine
-    container_name: immobili-postgres
-    environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password123
-      POSTGRES_DB: immobili_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - ./data/postgres:/var/lib/postgresql/data
-    networks:
-      - immobili-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d immobili_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # 2. Elasticsearch
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.17.10
     container_name: immobili-elastic
@@ -40,7 +19,6 @@ services:
     networks:
       - immobili-network
 
-  # 4. Eureka Server
   micro-eureka:
     build: ./backend/micro-eureka
     container_name: micro-eureka
@@ -49,7 +27,6 @@ services:
     networks:
       - immobili-network
 
-  # 5. API Gateway
   micro-gateway:
     build: ./backend/micro-gateway
     container_name: micro-gateway
@@ -61,32 +38,76 @@ services:
       - "SPRING_CLOUD_GATEWAY_GLOBALCORS_CORSCONFIGURATIONS_[/**]_ALLOWEDMETHODS=*"
       - "SPRING_CLOUD_GATEWAY_GLOBALCORS_CORSCONFIGURATIONS_[/**]_ALLOWEDHEADERS=*"
       - "SPRING_CLOUD_GATEWAY_GLOBALCORS_CORSCONFIGURATIONS_[/**]_ALLOWCREDENTIALS=true"
-
     depends_on:
       - micro-eureka
     networks:
       - immobili-network
 
-  # 6. Property Service
   micro-properties:
     build: ./backend/micro-properties
     container_name: micro-properties
     ports:
       - "8081:8081"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/immobili_db
-      - SPRING_DATASOURCE_USERNAME=admin
-      - SPRING_DATASOURCE_PASSWORD=password123
-      - SPRING_ELASTICSEARCH_URIS=http://elasticsearch:9200
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://micro-eureka:8761/eureka/
+      SPRING_DATASOURCE_URL: "jdbc:mysql://inmobiliapp-db.cbgo4gkcguti.us-east-2.rds.amazonaws.com:3306/${MYSQL_DATABASE:-immobili_db}?sslMode=VERIFY_IDENTITY&sslCa=/app/certs/global-bundle.pem&serverTimezone=UTC"
+      SPRING_DATASOURCE_USERNAME: "${MYSQL_USER:-admin}"
+      SPRING_DATASOURCE_PASSWORD: "${MYSQL_PASSWORD}"
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://micro-eureka:8761/eureka/
+    volumes:
+      - ./global-bundle.pem:/app/certs/global-bundle.pem:ro
     depends_on:
-      - postgres-db
       - elasticsearch
       - micro-eureka
     networks:
       - immobili-network
 
-  # 9. React Frontend
+  micro-agents:
+    build: ./backend/micro-agents
+    container_name: micro-agents
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mysql://inmobiliapp-db.cbgo4gkcguti.us-east-2.rds.amazonaws.com:3306/${MYSQL_DATABASE:-immobili_db}?sslMode=VERIFY_IDENTITY&sslCa=/app/certs/global-bundle.pem&serverTimezone=UTC"
+      SPRING_DATASOURCE_USERNAME: "${MYSQL_USER:-admin}"
+      SPRING_DATASOURCE_PASSWORD: "${MYSQL_PASSWORD}"
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://micro-eureka:8761/eureka/
+    volumes:
+      - ./global-bundle.pem:/app/certs/global-bundle.pem:ro
+    depends_on:
+      - micro-eureka
+    networks:
+      - immobili-network
+
+  database-seed:
+    image: mysql:8.4
+    container_name: immobili-database-seed
+    restart: "no"
+    environment:
+      MYSQL_HOST: inmobiliapp-db.cbgo4gkcguti.us-east-2.rds.amazonaws.com
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: "${MYSQL_DATABASE:-immobili_db}"
+      MYSQL_USER: "${MYSQL_USER:-admin}"
+      MYSQL_PWD: "${MYSQL_PASSWORD}"
+    volumes:
+      - ./db/seed.sql:/seed.sql:ro
+      - ./global-bundle.pem:/certs/global-bundle.pem:ro
+    command: >-
+      sh -c 'until mysql --host="$$MYSQL_HOST" --port="$$MYSQL_PORT"
+      --user="$$MYSQL_USER" --database="$$MYSQL_DATABASE"
+      --ssl-mode=VERIFY_IDENTITY --ssl-ca=/certs/global-bundle.pem
+      -e "SELECT 1"; do echo "Esperando conexión con RDS..."; sleep 3; done;
+      mysql --host="$$MYSQL_HOST" --port="$$MYSQL_PORT"
+      --user="$$MYSQL_USER" --database="$$MYSQL_DATABASE"
+      --ssl-mode=VERIFY_IDENTITY --ssl-ca=/certs/global-bundle.pem
+      < /seed.sql'
+    depends_on:
+      - micro-properties
+    networks:
+      - immobili-network
+
   frontend-react:
     build: ./frontend
     container_name: immobili-frontend
