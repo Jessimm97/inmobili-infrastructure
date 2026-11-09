@@ -20,7 +20,9 @@ services:
       - immobili-network
 
   micro-eureka:
-    build: ./backend/micro-eureka
+    build:
+      context: ./backend/micro-eureka
+      dockerfile: dockerfile
     container_name: micro-eureka
     ports:
       - "8761:8761"
@@ -28,7 +30,9 @@ services:
       - immobili-network
 
   micro-gateway:
-    build: ./backend/micro-gateway
+    build:
+      context: ./backend/micro-gateway
+      dockerfile: dockerfile
     container_name: micro-gateway
     ports:
       - "8080:8080"
@@ -44,7 +48,9 @@ services:
       - immobili-network
 
   micro-properties:
-    build: ./backend/micro-properties
+    build:
+      context: ./backend/micro-properties
+      dockerfile: dockerfile
     container_name: micro-properties
     ports:
       - "8081:8081"
@@ -64,7 +70,9 @@ services:
       - immobili-network
 
   micro-agents:
-    build: ./backend/micro-agents
+    build:
+      context: ./backend/micro-agents
+      dockerfile: dockerfile
     container_name: micro-agents
     ports:
       - "8082:8082"
@@ -109,7 +117,9 @@ services:
       - immobili-network
 
   frontend-react:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: dockerfile
     container_name: immobili-frontend
     ports:
       - "3000:80"
