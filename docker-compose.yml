@@ -55,7 +55,7 @@ services:
     ports:
       - "8081:8081"
     environment:
-      SPRING_DATASOURCE_URL: "jdbc:mysql://inmobiliapp-db.cbgo4gkcguti.us-east-2.rds.amazonaws.com:3306/${MYSQL_DATABASE:-immobili_db}?sslMode=VERIFY_IDENTITY&sslCa=/app/certs/global-bundle.pem&serverTimezone=UTC"
+      SPRING_DATASOURCE_URL: "jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE:-immobili_db}?sslMode=VERIFY_IDENTITY&sslCa=/app/certs/global-bundle.pem&serverTimezone=UTC"
       SPRING_DATASOURCE_USERNAME: "${MYSQL_USER:-admin}"
       SPRING_DATASOURCE_PASSWORD: "${MYSQL_PASSWORD}"
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
@@ -77,7 +77,7 @@ services:
     ports:
       - "8082:8082"
     environment:
-      SPRING_DATASOURCE_URL: "jdbc:mysql://inmobiliapp-db.cbgo4gkcguti.us-east-2.rds.amazonaws.com:3306/${MYSQL_DATABASE:-immobili_db}?sslMode=VERIFY_IDENTITY&sslCa=/app/certs/global-bundle.pem&serverTimezone=UTC"
+      SPRING_DATASOURCE_URL: "jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE:-immobili_db}?sslMode=VERIFY_IDENTITY&sslCa=/app/certs/global-bundle.pem&serverTimezone=UTC"
       SPRING_DATASOURCE_USERNAME: "${MYSQL_USER:-admin}"
       SPRING_DATASOURCE_PASSWORD: "${MYSQL_PASSWORD}"
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
@@ -94,8 +94,8 @@ services:
     container_name: immobili-database-seed
     restart: "no"
     environment:
-      MYSQL_HOST: inmobiliapp-db.cbgo4gkcguti.us-east-2.rds.amazonaws.com
-      MYSQL_PORT: 3306
+      MYSQL_HOST: "${MYSQL_HOST}"
+      MYSQL_PORT: "${MYSQL_PORT}"
       MYSQL_DATABASE: "${MYSQL_DATABASE:-immobili_db}"
       MYSQL_USER: "${MYSQL_USER:-admin}"
       MYSQL_PWD: "${MYSQL_PASSWORD}"
